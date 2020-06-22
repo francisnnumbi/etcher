@@ -16,7 +16,6 @@
 
 import { faCog, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { sourceDestination } from 'etcher-sdk';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -28,10 +27,7 @@ import FinishPage from '../../components/finish/finish';
 import { ReducedFlashingInfos } from '../../components/reduced-flashing-infos/reduced-flashing-infos';
 import { SafeWebview } from '../../components/safe-webview/safe-webview';
 import { SettingsModal } from '../../components/settings/settings';
-import {
-	SourceOptions,
-	SourceSelector,
-} from '../../components/source-selector/source-selector';
+import { SourceSelector } from '../../components/source-selector/source-selector';
 import * as flashState from '../../models/flash-state';
 import * as selectionState from '../../models/selection-state';
 import * as settings from '../../models/settings';
@@ -75,9 +71,12 @@ function getImageBasename() {
 		return '';
 	}
 
-	const selectionImageName = selectionState.getImageName();
-	const imageBasename = path.basename(selectionState.getImagePath());
-	return selectionImageName || imageBasename;
+	const image = selectionState.getImage();
+	if (image.drive) {
+		return image.drive.description;
+	}
+	const imageBasename = path.basename(image.path);
+	return image.name || imageBasename;
 }
 
 const StepBorder = styled.div<{
@@ -115,7 +114,6 @@ interface MainPageState {
 	current: 'main' | 'success';
 	isWebviewShowing: boolean;
 	hideSettings: boolean;
-	source: SourceOptions;
 }
 
 export class MainPage extends React.Component<
@@ -128,10 +126,6 @@ export class MainPage extends React.Component<
 			current: 'main',
 			isWebviewShowing: false,
 			hideSettings: true,
-			source: {
-				imagePath: '',
-				SourceType: sourceDestination.File,
-			},
 			...this.stateHelper(),
 		};
 	}
@@ -228,12 +222,7 @@ export class MainPage extends React.Component<
 					justifyContent="space-between"
 				>
 					{notFlashingOrSplitView && (
-						<SourceSelector
-							flashing={this.state.isFlashing}
-							afterSelected={(source: SourceOptions) =>
-								this.setState({ source })
-							}
-						/>
+						<SourceSelector flashing={this.state.isFlashing} />
 					)}
 
 					{notFlashingOrSplitView && (
@@ -307,7 +296,6 @@ export class MainPage extends React.Component<
 					<FlashStep
 						goToSuccess={() => this.setState({ current: 'success' })}
 						shouldFlashStepBeDisabled={shouldFlashStepBeDisabled}
-						source={this.state.source}
 						isFlashing={this.state.isFlashing}
 						isWebviewShowing={this.state.isWebviewShowing}
 						step={state.type}
